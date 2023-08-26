@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import { getProductInfoByUPC } from '../api/openFoodFacts';
+
 
 const List = () => {
   const [scanned, setScanned] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
+  // Barcode premission
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
       const { status } = await BarCodeScanner.requestPermissionsAsync();
@@ -15,10 +18,15 @@ const List = () => {
     getBarCodeScannerPermissions();
   }, []);
 
-  const handleBarCodeScanned = ({ type, data }: {type: string, data: string}) => {
+  const handleBarCodeScanned = async ({ type, data }: { type: string, data: string }) => {
     setScanned(true);
+    const productData = await getProductInfoByUPC(data); // Fetch product info
     alert(`Bar code with type ${type} and data ${data} has been scanned!`);
-    const code = data;
+    if (productData) {
+      alert(`Product info: ${JSON.stringify(productData)}`);
+    } else {
+      alert('Failed to fetch product information.');
+    }
   };
 
   return (
