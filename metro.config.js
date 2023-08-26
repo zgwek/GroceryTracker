@@ -6,5 +6,6 @@ const config = getDefaultConfig(__dirname, {
   // [Web-only]: Enables CSS support in Metro.
   isCSSEnabled: true,
 });
+getDefaultConfig.resolver.sourceExts.push('cjs');
 
 module.exports = config;
