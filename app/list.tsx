@@ -46,7 +46,7 @@ useEffect(() => {
   const fetchProducts = async () => {
     const productsCollectionRef = collection(FIRESTORE_DB, 'products');
     const querySnapshot = await getDocs(productsCollectionRef);
-
+      // products to array
     const products: Product[] = [];
     querySnapshot.forEach((doc) => {
       const productData = doc.data();
@@ -91,12 +91,14 @@ const handleBarCodeScanned = async ({ type, data }: { type: string, data: string
         }
       });
 
-      if (isAdding) {
+      if (isAdding) {console.log("is.adding")
         if (productExists && docRefToUpdate) {
+          
           // Update the quantity add
           await updateDoc(docRefToUpdate, {
             quantity: increment(1),
           });
+
         } else {
           // Add a new doc w/ qauntity 1
           await addDoc(productsCollectionRef, {
@@ -119,6 +121,7 @@ const handleBarCodeScanned = async ({ type, data }: { type: string, data: string
             await updateDoc(docRefToUpdate, {
               quantity: updatedQuantity,
             });
+            alert('qauntity updated');
           } else {
             // Remove if quantity is 0
             await deleteDoc(docRefToUpdate);
@@ -156,7 +159,7 @@ return (
         keyExtractor={(item) => item.barcode}
         renderItem={({ item }) => (
           <View style={styles.productItem}>
-            <Text>{item.name}</Text>
+            <Text>{item.brands + " | " + item.name  }</Text>
           </View>
         )}
       />
@@ -192,14 +195,12 @@ return (
   </View>
 );
 };
-
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#FFCA7A', 
   },
   shopButton: {
     position: 'absolute',
@@ -207,10 +208,11 @@ const styles = StyleSheet.create({
     height: 56,
     bottom: 5,
     left: 5,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#12492F'
+    , // Updated button color
     borderRadius: 4,
     padding: 5,
-    margin:10,
+    margin: 10,
     elevation: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -223,23 +225,24 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 100,
     height: 56,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#F56038', 
     borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
     right: 16,
     bottom: 16,
     elevation: 8,
-  },  scanText: {
+  },
+  scanText: {
     fontSize: 18,
     color: 'white',
-  }, productItem: {
+  },
+  productItem: {
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderColor: '#ccc',
     padding: 25,
-    width: '100%',
-    color: 'black', // Change text color to black
+    width: 350,
   },
 });
 
