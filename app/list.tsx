@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { getProductInfoByUPC } from '../api/openFoodFacts';
 import { FIRESTORE_DB } from '../config/FirebaseConfig';
-import { collection, addDoc,getDocs ,updateDoc,doc,increment, DocumentReference} from 'firebase/firestore';
+import { collection, addDoc,getDocs ,updateDoc,doc,increment, DocumentReference,deleteDoc} from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';//
 
 interface Product {
@@ -20,8 +20,18 @@ const List = () => {
   const [scanned, setScanned] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [hasPermission, setHasPermission] = useState(false);
-  const [productsData, setProductsData] = useState<Product[]>([]); // Added state for products
+  const [productsData, setProductsData] = useState<Product[]>([]); 
+  const [isAdding, setIsAdding] = useState(false); // State for tracking whether "Add" or "Shop" action
+  const handleAddButtonPress = () => {
+    setIsAdding(true); // Set the state to indicate "Add" action
+    setShowScanner(!showScanner); // Toggle the scanner
+  };
 
+  const handleShopButtonPress = () => {
+    setIsAdding(false); // Set the state to indicate "Shop" action
+    setShowScanner(!showScanner); // Toggle the scanner 
+  };
+  
   // Barcode premission
   useEffect(() => {
     const getBarCodeScannerPermissions = async () => {
@@ -58,6 +68,9 @@ useEffect(() => {
 }, [scanned]); // Trigger fetchProducts whenever 'scanned' state changes
 
 
+
+
+
 const handleBarCodeScanned = async ({ type, data }: { type: string, data: string }) => {
   setScanned(true);
   const productData = await getProductInfoByUPC(data); // Fetch product info
@@ -69,7 +82,7 @@ const handleBarCodeScanned = async ({ type, data }: { type: string, data: string
       let productExists = false;
       let docRefToUpdate: DocumentReference<unknown, Product> | undefined;
 
-      // Check if the product with the same barcode already exists in the database
+      // Check barcode already exists in the database
       querySnapshot.forEach((doc) => {
         const product = doc.data();
         if (product.barcode === data) {
@@ -78,27 +91,49 @@ const handleBarCodeScanned = async ({ type, data }: { type: string, data: string
         }
       });
 
-      if (productExists && docRefToUpdate) {
-        // Update the quantity by incrementing it
-        await updateDoc(docRefToUpdate, {
-          quantity: increment(1), // Increment the quantity by 1
-        });
-      } else {
-        // Add a new document with quantity 1
-        await addDoc(productsCollectionRef, {
-          barcode: data,
-          name: productData.product_name,
-          keywords: productData._keywords,
-          brands: productData.brands,
-          image: productData.image_front_small_url,
-          quantity: 1,
-        });
-      }
+      if (isAdding) {
+        if (productExists && docRefToUpdate) {
+          // Update the quantity add
+          await updateDoc(docRefToUpdate, {
+            quantity: increment(1),
+          });
+        } else {
+          // Add a new doc w/ qauntity 1
+          await addDoc(productsCollectionRef, {
+            barcode: data,
+            name: productData.product_name,
+            keywords: productData._keywords,
+            brands: productData.brands,
+            image: productData.image_front_small_url,
+            quantity: 1,
+          });
+        }
 
-      alert('Product information added to Firebase!');
+        alert('Product information added to Firebase!');
+      } else {
+        if (productExists && docRefToUpdate) {
+          // Update the quantity shop
+          const updatedQuantity = productData.quantity - 1;
+
+          if (updatedQuantity > 0) {
+            await updateDoc(docRefToUpdate, {
+              quantity: updatedQuantity,
+            });
+          } else {
+            // Remove if quantity is 0
+            await deleteDoc(docRefToUpdate);
+          }
+        } else {
+          alert('Product not found in the list.');
+        }
+      }
     } catch (error) {
-      console.error('Error adding product:', error);
-      alert('Failed to add product information to Firebase.');
+      console.error('Error handling barcode:', error);
+      alert('Failed to handle barcode.');
+    } finally {
+      setScanned(false); // Reset scanned state
+      setShowScanner(false); // Hide scanner after successful scan
+      setIsAdding(false); // Reset isAdding state
     }
   } else {
     alert('Failed to fetch product information.');
@@ -107,44 +142,58 @@ const handleBarCodeScanned = async ({ type, data }: { type: string, data: string
 
 return (
   <View style={styles.container}>
-    <Text>list</Text>
+    
 
-    {/* Display products */}
-    <FlatList
-      data={productsData}
-      keyExtractor={(item) => item.barcode}
-      renderItem={({ item }) => (
-        <View style={styles.productItem}>
-          <Text>{item.name}</Text>
-        </View>
-      )}
-    />
-
-    {showScanner && (
+    {/* Display products or Scanner */}
+    {showScanner ? (
       <BarCodeScanner
         onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
         style={StyleSheet.absoluteFillObject}
       />
+    ) : (
+      <FlatList
+        data={productsData}
+        keyExtractor={(item) => item.barcode}
+        renderItem={({ item }) => (
+          <View style={styles.productItem}>
+            <Text>{item.name}</Text>
+          </View>
+        )}
+      />
     )}
 
-    {/* Custom FAB */}
+    {/* Scan Barcode Button */}
     {hasPermission && (
       <TouchableOpacity
-        style={styles.fab}
-        onPress={() => {
-          if (scanned) {
-            setShowScanner(false); // Hide scanner after successful scan
-          } else {
-            setShowScanner(true); // Show scanner
-          }
-        }}
-      >
-        <Text style={styles.fabText}>{scanned ? 'Scan Again' : 'Scan Barcode'}</Text>
+      style={styles.scanButton}
+      onPress={() => {
+        setIsAdding(false);
+        handleShopButtonPress();
+      }}
+    >
+        <Text style={styles.scanText}>{showScanner ? 'Show List' : 'Shop'}</Text>
       </TouchableOpacity>
     )}
+
+     {/* add Button */}
+     {hasPermission && (
+      <TouchableOpacity
+      style={styles.shopButton}
+      onPress={() => {
+        setIsAdding(true);
+        handleAddButtonPress();
+      }}
+    >
+        <Text style={styles.scanText}>{showScanner ? 'Show List' : 'Add'}</Text>
+      </TouchableOpacity>
+    )}
+
+    
   </View>
 );
 };
+
+
 
 const styles = StyleSheet.create({
   container: {
@@ -152,27 +201,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  fab: {
+  shopButton: {
     position: 'absolute',
-    width: 56,
+    width: 100,
+    height: 56,
+    bottom: 5,
+    left: 5,
+    backgroundColor: '#2196F3',
+    borderRadius: 4,
+    padding: 5,
+    margin:10,
+    elevation: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shopButtonText: {
+    color: 'white',
+    fontSize: 18,
+  },
+  scanButton: {
+    position: 'absolute',
+    width: 100,
     height: 56,
     backgroundColor: '#2196F3',
-    borderRadius: 28,
+    borderRadius: 5,
     alignItems: 'center',
     justifyContent: 'center',
     right: 16,
     bottom: 16,
     elevation: 8,
-  },
-  fabText: {
+  },  scanText: {
     fontSize: 18,
     color: 'white',
-  },productItem: {
+  }, productItem: {
+    backgroundColor: 'white',
     borderBottomWidth: 1,
     borderColor: '#ccc',
-    padding: 10,
+    padding: 25,
     width: '100%',
-    color: 'white',  // Adjust this value as needed
+    color: 'black', // Change text color to black
   },
 });
 
