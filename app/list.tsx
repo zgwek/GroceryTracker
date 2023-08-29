@@ -5,6 +5,7 @@ import { getProductInfoByUPC } from '../api/openFoodFacts';
 import { FIRESTORE_DB } from '../config/FirebaseConfig';
 import { collection, addDoc,getDocs ,updateDoc,doc,increment, DocumentReference,deleteDoc} from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';//
+import { Image } from 'react-native';
 
 interface Product {
   barcode: string;
@@ -155,15 +156,20 @@ return (
       />
     ) : (
       <FlatList
-        data={productsData}
-        keyExtractor={(item) => item.barcode}
-        renderItem={({ item }) => (
-          <View style={styles.productItem}>
-            <Text>{item.brands + " | " + item.name  }</Text>
-          </View>
-        )}
-      />
+      data={productsData}
+      keyExtractor={(item) => item.barcode}
+      renderItem={({ item }) => (
+        <View style={styles.productItem}>
+          <Image
+            source={{ uri: item.image }} // Use the image URL from the API
+            style={styles.productImage} // Add a style for the image
+          />
+          <Text>{item.brands + " | " + item.name}</Text>
+        </View>
+      )}
+    />
     )}
+    
 
     {/* Scan Barcode Button */}
     {hasPermission && (
@@ -243,6 +249,11 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 25,
     width: 350,
+  }, productImage: {
+    width: 100, // Set the width as needed
+    height: 100, // Set the height as needed
+    resizeMode: 'contain', // Adjust the resizeMode as needed
+    marginBottom: 10, // Add some margin to separate the image from the text
   },
 });
 
