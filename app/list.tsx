@@ -244,14 +244,7 @@ const styles = StyleSheet.create({
   scanText: {
     fontSize: 18,
     color: 'white',
-  },
-  productItem: {
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    padding: 25,
-    width: 350,
-  },   row: {
+  },  row: {
     flex: 1,
     justifyContent: 'space-between',
     paddingHorizontal: 10, // Add horizontal padding for spacing
