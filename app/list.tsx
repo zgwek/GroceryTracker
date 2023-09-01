@@ -156,18 +156,20 @@ return (
       />
     ) : (
       <FlatList
-      data={productsData}
-      keyExtractor={(item) => item.barcode}
-      renderItem={({ item }) => (
-        <View style={styles.productItem}>
-          <Image
-            source={{ uri: item.image }} // Use the image URL from the API
-            style={styles.productImage} // Add a style for the image
-          />
-          <Text>{item.brands + " | " + item.name}</Text>
-        </View>
-      )}
-    />
+  data={productsData}
+  keyExtractor={(item) => item.barcode}
+  numColumns={2} // Set the number of columns to 2
+  columnWrapperStyle={styles.row} 
+  renderItem={({ item }) => (
+    <View style={styles.productItem}>
+      <Image
+        source={{ uri: item.image }}
+        style={styles.productImage}
+      />
+      <Text>{item.brands + " | " + item.name}</Text>
+    </View>
+  )}
+/>
     )}
     
 
@@ -249,11 +251,27 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     padding: 25,
     width: 350,
-  }, productImage: {
-    width: 100, // Set the width as needed
-    height: 100, // Set the height as needed
-    resizeMode: 'contain', // Adjust the resizeMode as needed
-    marginBottom: 10, // Add some margin to separate the image from the text
+  },   row: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10, // Add horizontal padding for spacing
+    marginBottom: 20, // Add margin between rows
+  },
+
+  productItem: {
+    backgroundColor: 'white',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    width: '48%', // Set the width to create a grid layout with two products per row
+    padding: 10,
+    alignItems: 'center',
+  },
+
+  productImage: {
+    width: '100%',
+    height: 100,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
 });
 
